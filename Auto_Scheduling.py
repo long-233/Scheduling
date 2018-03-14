@@ -1,15 +1,57 @@
 import random
+import xlrd
+from openpyxl import Workbook
+import time
 
-dict1 = {31:'领班A', 25:'领班B', 20:'领班D'} # 船对应的领班
-dict2 = {31:5, 25:5, 20:6, } #船对应的人数
-dict3 = {'领班A':['全职B', '全职E'], '领班B':['全职D'], '领班C':[], '领班D':[]} # 领班带的服务员
-part_timer = ['兼职A', '兼职B', '兼职C', '兼职D', '兼职E', '兼职F']
-full_timer = ['全职A', '全职B', '全职C', '全职D', '全职E']
-Headwaiter = ['领班A', '领班B', '领班C', '领班D']
-ship1 = (31, 25, 20)
+def del_null(string):
+    return string != ''
+
+def int2(string):
+    return int(string)
+
+filedata = xlrd.open_workbook('夜游排班表.xlsx')
+Staff_list = filedata.sheet_by_name('人员表')
+relational = filedata.sheet_by_name('关系表')
+
+# 获取人员表里面的上班人员数据：
+part_timer = []
+full_timer = []
+Headwaiter = []
+ship1 = []
+
+for i in range(9,18):
+    part_timer = part_timer + Staff_list.row_values(i, 1, 11)
+for i in range(3, 9):
+    full_timer = full_timer + Staff_list.row_values(i, 1, 11)
+for i in range(0, 3):
+    Headwaiter = Headwaiter + Staff_list.row_values(i, 1, 11)
+for i in range(18, 22):
+    ship1 = ship1 + Staff_list.row_values(i, 1, 11)
+
+part_timer = list(filter(del_null, part_timer))
+full_timer = list(filter(del_null, full_timer))
+Headwaiter = list(filter(del_null, Headwaiter))
+ship1 = list(map(int2, filter(del_null, ship1)))
+
+# 获取关系表里面的关系数据:
+temp1 = list(map(int2, filter(del_null, relational.col_values(0, 1))))
+temp2 = list(filter(del_null, relational.col_values(1, 1)))
+temp3 = list(map(int2, filter(del_null, relational.col_values(2, 1))))
+temp4 = list(filter(del_null, relational.col_values(4, 1)))
+temp5 = []
+
+for i in range(1, relational.nrows):
+    temp5.append(list(filter(del_null, relational.row_values(i, 5))))
+
+dict1 = dict(map(lambda x, y:[x, y], temp1, temp2)) # 船对应的领班
+dict2 = dict(map(lambda x, y:[x, y], temp1, temp3)) # 船对应的人数
+dict3 = dict(map(lambda x, y:[x, y], temp4, temp5)) # 领班对应的服务员
 ship2 = []
 table = dict.fromkeys(ship1)
-tag = ''
+log = []
+
+print(dict2)
+
 for k, v in table.items():
     table[k] = []
 people_counting = 0
@@ -29,7 +71,10 @@ for i in ship1:
                 table[i].append(j)
                 full_timer.remove(j)
                 dict2[i] -= 1
-
+            if j in part_timer:
+                table[i].append(j)
+                part_timer.remove(j)
+                dict2[i] -= 1
     else:
         ship2.append(i)
         continue
@@ -44,13 +89,15 @@ for i in ship2:
             table[i].append(j)
             full_timer.remove(j)
             dict2[i] -= 1
-
+print(dict2)
+print(table)
 for i in ship1:
     for j in range(dict2[i]-y):
         if len(Headwaiter) != 0:
             x = random.randint(0, len(Headwaiter)-1)
             table[i].append(Headwaiter[x])
             Headwaiter.pop(x)
+            dict2[i] -= 1
             for k in dict3[dict1[i]]:
                 if k in full_timer:
                     table[i].append(k)
@@ -74,10 +121,17 @@ for i in ship1:
             table[i].append(part_timer[x])
             part_timer.pop(x)
         else:
-            tag = tag + '%s船缺一位服务员\n' % i
+            log.append('%s船缺一位服务员' % i)
 
 
-
+wb = Workbook()
+ws = wb.active
 for k, v in table.items():
+    v.insert(0, "巴%s" % str(k))
     print('%s船：%s' % (k, v))
-print(tag)
+    ws.append(v)
+for i in log:
+    ws.append([i,])
+
+wb.save(filename="%s排班表.xlsx" % time.strftime('%Y-%m-%d', time.localtime(time.time())))
+print(log)
