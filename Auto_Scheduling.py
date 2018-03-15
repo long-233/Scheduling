@@ -50,8 +50,6 @@ ship2 = []
 table = dict.fromkeys(ship1)
 log = []
 
-print(dict2)
-
 for k, v in table.items():
     table[k] = []
 people_counting = 0
@@ -59,7 +57,10 @@ people_counting = 0
 for i in ship1:
     people_counting += dict2[i]
 part_timer_counting = people_counting - len(full_timer) - len(Headwaiter) # 今天需要几个兼职
-y = part_timer_counting // len(ship1)    # 每艘船最少派几个兼职
+if part_timer_counting < 0:
+    y = 0
+else:
+    y = part_timer_counting // len(ship1)    # 每艘船最少派几个兼职
 
 for i in ship1:
     if dict1.get(i) in Headwaiter:
@@ -89,10 +90,13 @@ for i in ship2:
             table[i].append(j)
             full_timer.remove(j)
             dict2[i] -= 1
-print(dict2)
-print(table)
+        if j in part_timer:
+            table[i].append(j)
+            part_timer.remove(j)
+            dict2[i] -= 1
+
 for i in ship1:
-    for j in range(dict2[i]-y):
+    while (dict2[i]-y)>0:
         if len(Headwaiter) != 0:
             x = random.randint(0, len(Headwaiter)-1)
             table[i].append(Headwaiter[x])
@@ -102,6 +106,10 @@ for i in ship1:
                 if k in full_timer:
                     table[i].append(k)
                     full_timer.remove(k)
+                    dict2[i] -= 1
+                if k in part_timer:
+                    table[i].append(k)
+                    part_timer.remove(k)
                     dict2[i] -= 1
         elif len(full_timer) != 0:
             x = random.randint(0, len(full_timer)-1)
@@ -115,7 +123,7 @@ for i in ship1:
             dict2[i] -= 1
 
 for i in ship1:
-    for j in range(dict2[i]):
+    while dict2[i] < 0:
         if len(part_timer) != 0:
             x = random.randint(0, len(part_timer)-1)
             table[i].append(part_timer[x])
@@ -128,10 +136,9 @@ wb = Workbook()
 ws = wb.active
 for k, v in table.items():
     v.insert(0, "巴%s" % str(k))
-    print('%s船：%s' % (k, v))
     ws.append(v)
 for i in log:
     ws.append([i,])
 
 wb.save(filename="%s排班表.xlsx" % time.strftime('%Y-%m-%d', time.localtime(time.time())))
-print(log)
+
