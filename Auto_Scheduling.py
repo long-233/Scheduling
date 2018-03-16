@@ -62,6 +62,8 @@ if part_timer_counting < 0:
 else:
     y = part_timer_counting // len(ship1)    # 每艘船最少派几个兼职
 
+# 开始排班
+
 for i in ship1:
     if dict1.get(i) in Headwaiter:
         table[i].append(dict1[i])
@@ -123,14 +125,19 @@ for i in ship1:
             dict2[i] -= 1
 
 for i in ship1:
-    while dict2[i] < 0:
+    while dict2[i] > 0:
         if len(part_timer) != 0:
             x = random.randint(0, len(part_timer)-1)
             table[i].append(part_timer[x])
             part_timer.pop(x)
+            dict2[i] -= 1
         else:
             log.append('%s船缺一位服务员' % i)
 
+if len(Headwaiter) != 0:
+    log.append('%s 还没有添加进排班表' % ','.join(Headwaiter))
+if len(full_timer) != 0:
+    log.append('%s 还没有添加进排班表' % ','.join(full_timer))
 
 wb = Workbook()
 ws = wb.active
